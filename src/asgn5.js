@@ -17,23 +17,24 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const textureLoader = new THREE.TextureLoader();
-const texture = textureLoader.load('../assets/dirt.jpg');
-texture.colorSpace = THREE.SRGBColorSpace;
-
-const material = new THREE.MeshPhongMaterial({
-  map: texture,
+const objLoader = new OBJLoader();
+const emissionMaterial = new THREE.MeshStandardMaterial({
+  emissive: 'rgb(255, 0, 0)',
+  emissiveIntensity: 15
 });
-const cube1 = new THREE.Mesh(geometry, material);
-cube1.position.set(0, 0.8, 7);
-scene.add(cube1);
+emissionMaterial.toneMapped = false;
 
-const cube2 = new THREE.Mesh(geometry, material);
-cube2.position.set(0, 0.8, -7);
-scene.add(cube2);
+const orb1 = await objLoader.loadAsync('../assets/greatDodecahedron.obj');
+orb1.children[0].material = emissionMaterial;
+orb1.position.set(0, 0.8, 9);
+scene.add(orb1);
 
-let rotationShapes = [cube1, cube2];
+const orb2 = await objLoader.loadAsync('../assets/greatDodecahedron.obj');
+orb2.children[0].material = emissionMaterial;
+orb2.position.set(0, 0.8, -9);
+scene.add(orb2);
+
+let rotationShapes = [orb1, orb2];
 
 const gltfLoader = new GLTFLoader();
 const gltf = await gltfLoader.loadAsync('../assets/monster.glb');
@@ -48,7 +49,7 @@ const mesh = new THREE.Mesh(sphereGeo, sphereMat);
 mesh.position.set(-sphereRadius - 1, sphereRadius + 2, 0);
 scene.add(mesh);
 
-// const loader = new THREE.TextureLoader();
+const textureLoader = new THREE.TextureLoader();
 const skyboxTexture = textureLoader.load(
   '../assets/skybox.png',
   () => {
@@ -58,16 +59,24 @@ const skyboxTexture = textureLoader.load(
     scene.backgroundRotation.y = Math.PI;
   });
 
-const objLoader = new OBJLoader();
-const orb = await objLoader.loadAsync('../assets/greatDodecahedron.obj');
-const emissionMaterial = new THREE.MeshStandardMaterial({
-  emissive:'rgb(255, 0, 0)',
-  emissiveIntensity: 15
-});
-emissionMaterial.toneMapped = false;
-orb.children[0].material = emissionMaterial;
-orb.position.set(-10, 0, 5);
-scene.add(orb);
+let orb;
+let radius = 40.0;
+let orbCount = 100.0;
+let circleHeight = 47.5;
+
+for (let x = -radius; x <= radius; x += (2.0 * radius) / orbCount) {
+  orb = await objLoader.loadAsync('../assets/greatDodecahedron.obj');
+  orb.children[0].material = emissionMaterial;
+  orb.position.set(-50, Math.sqrt((radius * radius) - (x * x)) + circleHeight, x);
+  scene.add(orb);
+  rotationShapes.push(orb);
+
+  orb = await objLoader.loadAsync('../assets/greatDodecahedron.obj');
+  orb.children[0].material = emissionMaterial;
+  orb.position.set(-50, -Math.sqrt((radius * radius) - (x * x)) + circleHeight, x);
+  scene.add(orb);
+  rotationShapes.push(orb);
+}
 
 let color = 'rgb(255, 217, 0)';
 let intensity = 2;
@@ -104,10 +113,10 @@ const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 
 const bloomPass = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.5, // strength
-    0.2, // radius
-    3.5  // threshold
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  0.1, // strength
+  50, // radius
+  3.5  // threshold
 );
 composer.addPass(bloomPass);
 
