@@ -101,12 +101,6 @@ for (let x = -radius; x <= radius; x += (2.0 * radius) / orbCount) {
     scene.add(orb);
     rotationShapes.push(orb);
 
-    orb = new THREE.Mesh(boxGeometry, emissionMaterial);
-    orb.position.set(-50, -Math.sqrt((radius * radius) - (x * x)) + circleHeight, x);
-    orb.scale.set(4, 4, 4);
-    scene.add(orb);
-    rotationShapes.push(orb);
-
   } else {
     orb = await objLoader.loadAsync('../assets/greatDodecahedron.obj');
     orb.children[0].material = emissionMaterial;
